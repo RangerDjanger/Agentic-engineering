@@ -20,6 +20,7 @@ Point CodeDoc at any codebase and it will:
 ```
 codedoc-output/
 ├── architecture-report.html    ← Open in browser
+├── architecture-report.pdf     ← Solution Architecture Document (PDF)
 ├── deployment.drawio           ← UML Deployment Diagram
 ├── deployment.png              ← PNG render (embedded in report)
 ├── logical.drawio              ← UML Package Diagram
@@ -97,7 +98,7 @@ CodeDoc will scan the codebase, generate all diagrams, and produce `architecture
 
 ## How It Works
 
-CodeDoc executes a **4-phase pipeline**:
+CodeDoc executes a **5-phase pipeline**:
 
 ```
 Phase 1: SCAN      → Walk the codebase, collect structural facts
@@ -105,6 +106,7 @@ Phase 2: ANALYSE   → Reason about architecture (overview, components, layers, 
 Phase 3: DIAGRAM   → Generate Mermaid + Draw.io XML diagrams
 Phase 3b: PNG      → Export Draw.io diagrams to PNG (required for deployment, logical, interface)
 Phase 4: REPORT    → Assemble a self-contained HTML file with embedded diagrams
+Phase 5: PDF       → Export the HTML report to PDF (Solution Architecture Document)
 ```
 
 ### Phase 1 — Scan
@@ -149,6 +151,11 @@ Assembles a single `architecture-report.html` with:
 - Mermaid diagrams for sequences and flows (rendered client-side)
 - Data tables for nodes, layers, components, interfaces, and flow steps
 - Download buttons for `.drawio` files
+- Print-friendly CSS for PDF export
+
+### Phase 5 — PDF
+
+Exports the HTML report to `architecture-report.pdf` using a headless browser (Edge, Chrome, or Playwright). The PDF hides the sidebar navigation and formats the content for A4 paper — suitable for sharing as a formal Solution Architecture Document.
 
 ### Supported Languages
 

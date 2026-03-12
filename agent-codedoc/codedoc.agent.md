@@ -17,6 +17,7 @@ Phase 2: ANALYZE   → Reason about architecture (overview, components, layers, 
 Phase 3: DIAGRAM   → Generate Mermaid UML diagrams + Draw.io XML diagrams
 Phase 3b: PNG      → Export Draw.io diagrams to PNG (REQUIRED for deployment, logical, interface)
 Phase 4: REPORT    → Assemble a single self-contained HTML file with embedded PNG + Mermaid diagrams
+Phase 5: PDF       → Export the HTML report to PDF (Solution Architecture Document)
 ```
 
 ## Phase 1 — Scan the Codebase
@@ -282,6 +283,7 @@ Create a **single self-contained HTML file** called `architecture-report.html` i
 ```
 {output-dir}/
 ├── architecture-report.html    (main interactive report with embedded PNG diagrams)
+├── architecture-report.pdf     (PDF export — Solution Architecture Document)
 ├── deployment.drawio           (draw.io XML — open in diagrams.net)
 ├── deployment.png              (PNG export — if draw.io CLI available)
 ├── logical.drawio
@@ -428,6 +430,15 @@ The report MUST follow this exact structure. Use the complete HTML template belo
         @media (max-width: 768px) {
             nav { width: 100%; height: auto; position: relative; }
             main { margin-left: 0; padding: 20px; }
+        }
+        @media print {
+            nav, .theme-toggle, .download-btn { display: none !important; }
+            main { margin-left: 0; padding: 10px; max-width: 100%; }
+            section { page-break-inside: avoid; margin-bottom: 30px; }
+            .diagram-png { border: none; }
+            .diagram-container { break-inside: avoid; }
+            body { font-size: 11px; }
+            h2 { font-size: 18px; }
         }
     </style>
 </head>
@@ -716,6 +727,55 @@ The report MUST follow this exact structure. Use the complete HTML template belo
 
 ---
 
+## Phase 5 — Generate PDF (Solution Architecture Document)
+
+After generating the HTML report, export it to PDF so it can be shared as a formal **Solution Architecture Document (SAD)**.
+
+### PDF Export Method
+
+Use one of the following tools (in preference order) to convert the HTML report to PDF:
+
+**Option 1 — Playwright (recommended):**
+```bash
+pip install playwright && playwright install chromium
+python -c "
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    page = browser.new_page()
+    page.goto('file:///{output_dir}/architecture-report.html')
+    page.wait_for_timeout(3000)  # Wait for Mermaid to render
+    page.pdf(path='{output_dir}/architecture-report.pdf', format='A4', print_background=True, margin={'top': '20mm', 'bottom': '20mm', 'left': '15mm', 'right': '15mm'})
+    browser.close()
+"
+```
+
+**Option 2 — Node.js with Puppeteer:**
+```bash
+npx puppeteer print architecture-report.html architecture-report.pdf --format A4 --margin-top 20mm --margin-bottom 20mm
+```
+
+**Option 3 — Chrome/Edge headless (no install needed if browser exists):**
+```bash
+# Windows (Edge)
+& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless --disable-gpu --print-to-pdf="{output_dir}\architecture-report.pdf" --no-pdf-header-footer "file:///{output_dir}/architecture-report.html"
+
+# macOS (Chrome)
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --headless --disable-gpu --print-to-pdf="{output_dir}/architecture-report.pdf" --no-pdf-header-footer "file://{output_dir}/architecture-report.html"
+
+# Linux
+google-chrome --headless --disable-gpu --print-to-pdf="{output_dir}/architecture-report.pdf" --no-pdf-header-footer "file://{output_dir}/architecture-report.html"
+```
+
+### PDF Requirements
+
+- **Wait for Mermaid rendering** — Mermaid diagrams render client-side via JavaScript. You MUST wait at least 3 seconds after page load before capturing the PDF, or use `page.wait_for_selector('.mermaid svg')` to confirm rendering is complete.
+- **Print backgrounds** — Enable background colours and images so diagram containers and badges render correctly.
+- **A4 format** with margins (20mm top/bottom, 15mm left/right).
+- The sidebar navigation does NOT need to appear in the PDF — it's for interactive use only. Use a `@media print` CSS block to hide it if needed.
+
+---
+
 ## Execution Workflow
 
 When the user says "analyze this codebase" or similar:
@@ -745,10 +805,13 @@ When the user says "analyze this codebase" or similar:
 
 7. **Phase 4 — Generate `architecture-report.html`** using the template above, filled with all analysis data, embedded Mermaid diagrams, and inline PNG images (base64 data URIs) for deployment, logical, and interface sections. Write it to the output directory.
 
-8. **Report completion:**
+8. **Phase 5 — Generate PDF.** Export the HTML report to `architecture-report.pdf` using a headless browser (Edge/Chrome or Playwright). Wait for Mermaid diagrams to render before capturing. See Phase 5 instructions above for commands.
+
+9. **Report completion:**
    ```
    ✓ Done! Output: {output_dir}/
      - architecture-report.html (open in browser)
+     - architecture-report.pdf  (Solution Architecture Document)
      - {N} .drawio diagram files
      - deployment.png, logical.png, interface.png (embedded in report)
      - {N} .mmd diagram files
