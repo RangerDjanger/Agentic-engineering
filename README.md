@@ -4,6 +4,8 @@
 
 CodeDoc is a **GitHub Copilot agent** that scans a codebase, analyses its architecture, and produces a self-contained interactive HTML report with UML 2.5.1-compliant diagrams.
 
+![Report Overview](docs/screenshots/full-report.png)
+
 ---
 
 ## What It Does
@@ -205,6 +207,32 @@ After running CodeDoc against a Java/Spring Boot codebase:
 
 ✓ architecture-report.html — open in browser
 ```
+
+### Report Screenshots
+
+**System Overview** — architecture style, key technologies, and stats at a glance:
+
+![System Overview](docs/screenshots/overview.png)
+
+**Deployment Diagram** — UML 2.5.1 physical architecture rendered as PNG from Draw.io:
+
+![Deployment Diagram](docs/screenshots/deployment.png)
+
+**Logical Architecture** — UML package diagram showing layers and component groupings:
+
+![Logical Architecture](docs/screenshots/logical.png)
+
+**Component Diagram** — Mermaid-rendered component dependency flowchart:
+
+![Component Diagram](docs/screenshots/component.png)
+
+**System Flows** — Mermaid activity diagrams for end-to-end request paths:
+
+![System Flows](docs/screenshots/system-flow.png)
+
+**Sequence Diagrams** — Mermaid UML sequence diagrams with numbered messages:
+
+![Sequence Diagrams](docs/screenshots/sequences.png)
 
 ---
 
