@@ -167,6 +167,59 @@ For each finding, record:
 - **severity**: `low` (cosmetic cleanup), `medium` (should be removed), `high` (actively misleading or risky)
 - **recommendation**: What action to take (remove, refactor, migrate, etc.)
 
+### 2.9 — Infrastructure as Code (IaC)
+
+Analyse all Infrastructure as Code files in the codebase. Search for:
+
+- **Terraform**: `*.tf`, `*.tfvars` files, `terraform/` directories
+- **Bicep**: `*.bicep` files
+- **ARM Templates**: `*.json` files with `$schema` containing `deploymentTemplate`
+- **CloudFormation**: `*.yaml`/`*.json` with `AWSTemplateFormatVersion`
+- **Pulumi**: `Pulumi.yaml`, `Pulumi.*.yaml`
+- **Ansible**: `playbook*.yml`, `roles/`, `inventory`
+- **Helm**: `Chart.yaml`, `values.yaml`, `templates/`
+- **Docker**: `Dockerfile`, `docker-compose.yml`, `docker-compose.*.yml`
+- **Kubernetes**: `*.yaml` with `apiVersion` and `kind` (Deployment, Service, ConfigMap, etc.)
+
+For each IaC configuration found, record:
+- **name**: Descriptive name (e.g., "Production App Service", "Dev SQL Database")
+- **tool**: Terraform, Bicep, ARM, CloudFormation, Pulumi, Helm, Docker, Kubernetes, Ansible
+- **environment**: Which environment(s) it targets — `dev`, `test`, `staging`, `prod`, `shared`, or `all`. Infer from file names (e.g., `prod.tfvars`, `docker-compose.dev.yml`), folder names (e.g., `environments/prod/`), or variable values
+- **resources**: List of key resources provisioned (e.g., "App Service", "SQL Database", "Redis Cache", "Storage Account", "VNet")
+- **file_path**: Path to the file
+- **description**: Brief summary of what this IaC configures
+- **notable_config**: Any notable configuration — SKUs, scaling rules, networking, secrets management, managed identity, etc.
+
+Group findings by environment. If no environment-specific config exists, list as "all" or infer from context.
+
+### 2.10 — CI/CD Pipeline Analysis
+
+Analyse all CI/CD pipeline definitions in the codebase. Search for:
+
+- **GitHub Actions**: `.github/workflows/*.yml`
+- **Azure DevOps**: `azure-pipelines.yml`, `azure-pipelines.*.yml`, `.azure-pipelines/`
+- **Jenkins**: `Jenkinsfile`, `jenkins/`
+- **GitLab CI**: `.gitlab-ci.yml`
+- **Travis CI**: `.travis.yml`
+- **CircleCI**: `.circleci/config.yml`
+- **Bitbucket**: `bitbucket-pipelines.yml`
+
+For each pipeline found, record:
+- **name**: Pipeline name (from file or `name:` field)
+- **tool**: GitHub Actions, Azure DevOps, Jenkins, GitLab CI, etc.
+- **file_path**: Path to the pipeline file
+- **trigger**: What triggers the pipeline (push, PR, schedule, manual)
+- **stages**: Ordered list of stages/jobs (e.g., Build → Test → Deploy Dev → Deploy Prod)
+- **environments**: Which environments are deployed to
+- **key_steps**: Notable steps — build commands, test frameworks, deployment targets, approval gates, secret usage
+- **artifacts**: What gets built/published (Docker images, packages, binaries)
+- **quality_gates**: Tests, linting, code coverage, security scans, approvals
+
+Also assess the overall CI/CD approach:
+- **Deployment strategy**: Rolling, blue-green, canary, or manual
+- **Environment promotion**: How code moves from dev → test → prod
+- **Branch strategy**: Which branches trigger which pipelines
+
 ---
 
 ## Phase 3 — Generate Diagrams
@@ -485,6 +538,9 @@ The report MUST follow this exact structure. Use the complete HTML template belo
         <a href="#flows-detail">Flows</a>
         <div class="section-label">Code Quality</div>
         <a href="#deprecated-unused">Deprecated/Unused Code</a>
+        <div class="section-label">DevOps</div>
+        <a href="#iac">Infrastructure as Code</a>
+        <a href="#cicd">CI/CD Pipelines</a>
     </nav>
     <main>
         <!-- OVERVIEW -->
@@ -734,6 +790,85 @@ The report MUST follow this exact structure. Use the complete HTML template belo
                     </tr>
                     -->
                     <!-- Severity colours: high=#dc2626, medium=#d97706, low=#6b7280 -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- INFRASTRUCTURE AS CODE -->
+        <section id="iac">
+            <h2>Infrastructure as Code <span class="badge">DevOps</span></h2>
+            <div class="description">
+                <p>Infrastructure as Code (IaC) configurations found in the codebase, grouped by environment.</p>
+            </div>
+            <!-- For each environment (dev, test, staging, prod, shared): -->
+            <h3>🟢 {ENVIRONMENT_NAME} Environment</h3>
+            <div class="diagram-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Tool</th>
+                            <th>Resources</th>
+                            <th>File</th>
+                            <th>Notable Config</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <!-- For each IaC config in this environment:
+                    <tr>
+                        <td><strong>{NAME}</strong><br/><small>{DESCRIPTION}</small></td>
+                        <td><span class="tag tag-tech">{TOOL}</span></td>
+                        <td>{RESOURCES_LIST}</td>
+                        <td><code>{FILE_PATH}</code></td>
+                        <td>{NOTABLE_CONFIG}</td>
+                    </tr>
+                    -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Environment indicator emojis: dev=🟢, test=🟡, staging=🟠, prod=🔴, shared=🔵, all=⚪ -->
+        </section>
+
+        <!-- CI/CD PIPELINES -->
+        <section id="cicd">
+            <h2>CI/CD Pipelines <span class="badge">DevOps</span></h2>
+            <div class="description">
+                <p>Continuous Integration and Deployment pipeline analysis. Shows how code is built, tested, and deployed across environments.</p>
+            </div>
+
+            <!-- Overall CI/CD approach summary -->
+            <div class="diagram-container">
+                <h3>CI/CD Approach</h3>
+                <table>
+                    <thead><tr><th>Aspect</th><th>Details</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Deployment Strategy</strong></td><td>{DEPLOYMENT_STRATEGY}</td></tr>
+                        <tr><td><strong>Environment Promotion</strong></td><td>{ENV_PROMOTION}</td></tr>
+                        <tr><td><strong>Branch Strategy</strong></td><td>{BRANCH_STRATEGY}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- For each pipeline: -->
+            <div class="diagram-container">
+                <h3>{PIPELINE_NAME} <span class="tag tag-tech">{TOOL}</span></h3>
+                <p><code>{FILE_PATH}</code></p>
+                <p><strong>Trigger:</strong> {TRIGGER}</p>
+                <p><strong>Environments:</strong> {ENVIRONMENTS}</p>
+                <p><strong>Artifacts:</strong> {ARTIFACTS}</p>
+                <h4>Stages</h4>
+                <table>
+                    <thead><tr><th>#</th><th>Stage/Job</th><th>Key Steps</th><th>Quality Gates</th></tr></thead>
+                    <tbody>
+                    <!-- For each stage:
+                    <tr>
+                        <td>{N}</td>
+                        <td><strong>{STAGE_NAME}</strong></td>
+                        <td>{KEY_STEPS}</td>
+                        <td>{QUALITY_GATES}</td>
+                    </tr>
+                    -->
                     </tbody>
                 </table>
             </div>
