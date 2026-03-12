@@ -15,7 +15,7 @@ When the user asks you to analyze a codebase, you execute a **4-phase pipeline**
 Phase 1: SCAN      → Walk the codebase, collect structural facts
 Phase 2: ANALYZE   → Reason about architecture (overview, components, layers, flows)
 Phase 3: DIAGRAM   → Generate Mermaid UML diagrams + Draw.io XML diagrams
-Phase 3b: PNG      → Export Draw.io diagrams to PNG (REQUIRED for deployment, logical, interface)
+Phase 3b: PNG      → Export Draw.io diagrams to PNG (REQUIRED for deployment, logical, interface, IaC)
 Phase 4: REPORT    → Assemble a single self-contained HTML file with embedded PNG + Mermaid diagrams
 Phase 5: PDF       → Export the HTML report to PDF (Solution Architecture Document)
 ```
@@ -232,6 +232,7 @@ Generate **UML 2.5.1-compliant** diagrams using the best format for each type:
 - **Interface Diagram** → Draw.io XML → **MUST export to PNG** (no Mermaid equivalent)
 - **System Flows** → Mermaid flowchart + Draw.io XML (PNG optional — Mermaid provides visual)
 - **Sequence Diagrams** → Mermaid sequenceDiagram + Draw.io XML (PNG optional — Mermaid provides visual)
+- **Infrastructure Diagram** → Draw.io XML → **MUST export to PNG** (cloud architecture per environment — no Mermaid equivalent)
 
 ### 3.0 — Draw.io XML Diagrams (Deployment + Logical)
 
@@ -292,7 +293,38 @@ drawio --export --format png --scale 2 --border 10 --quality 100 --output {name}
 3. Embed in HTML as: `<img src="data:image/png;base64,{BASE64_DATA}" alt="{Diagram Name}" />`
 4. Save the `.png` file in the output directory alongside the `.drawio` file
 
-**If draw.io is NOT installed:** Warn the user that deployment, logical, and interface diagrams cannot be rendered inline without draw.io desktop installed. Provide the install link: https://github.com/jgraph/drawio-desktop/releases
+**If draw.io is NOT installed:** Warn the user that deployment, logical, interface, and infrastructure diagrams cannot be rendered inline without draw.io desktop installed. Provide the install link: https://github.com/jgraph/drawio-desktop/releases
+
+### 3.0c — Infrastructure Diagram (Draw.io)
+
+Generate a Draw.io XML diagram for **each environment** that has IaC resources. This is a cloud architecture diagram — NOT a UML diagram.
+
+**For each environment (dev, test, staging, prod)**, create an `iac_{environment}.drawio` file showing:
+
+**Cloud resource shapes (use draw.io's built-in cloud shapes):**
+- **Compute**: `shape=mxgraph.azure.virtual_machine` or `shape=mxgraph.aws3.ec2` — App Services, VMs, Functions, Containers
+- **Database**: `shape=cylinder3` — SQL Database, Cosmos DB, Redis, DynamoDB
+- **Storage**: `shape=mxgraph.azure.storage` or `shape=mxgraph.aws3.s3` — Blob, S3, File shares
+- **Networking**: `shape=mxgraph.azure.virtual_network` — VNet, Subnet, Load Balancer, API Gateway, CDN
+- **Messaging**: `shape=mxgraph.azure.service_bus` — Service Bus, Event Hub, SQS, Kafka
+- **Identity**: `shape=mxgraph.azure.active_directory` — AAD, IAM, Key Vault
+- **Monitoring**: `shape=mxgraph.azure.application_insights` — App Insights, CloudWatch, Log Analytics
+- **Container**: `shape=mxgraph.azure.kubernetes_service` — AKS, ECS, GKE
+
+**If you don't know the specific cloud provider shape, use generic shapes:**
+- Rectangle with rounded corners for services: `rounded=1;fillColor=#dbeafe;strokeColor=#2563eb;`
+- Cylinder for databases: `shape=cylinder3;fillColor=#ebf5fb;strokeColor=#2563eb;`
+- Cloud shape for external services: `shape=cloud;fillColor=#f0fdf4;strokeColor=#16a34a;`
+- Hexagon for containers/pods: `shape=hexagon;fillColor=#fef3c7;strokeColor=#d97706;`
+
+**Layout:**
+- Group resources by tier/function: Networking at top, compute in middle, data at bottom
+- Use containment (parent cells) to show VNet → Subnet → Resources nesting
+- Draw connections between resources with protocol labels (HTTPS, SQL, AMQP, etc.)
+- Add a title label: `"{ENVIRONMENT} Environment — Cloud Infrastructure"`
+- Use colour coding: networking=blue, compute=orange, data=green, messaging=purple, identity=grey
+
+**Export to PNG** using the same draw.io CLI command and embed in the report.
 
 ### 3.1 — Sequence Diagrams
 
@@ -371,6 +403,12 @@ Create a **single self-contained HTML file** called `architecture-report.html` i
 ├── system_flow.png
 ├── sequence.drawio
 ├── sequence.png
+├── iac_dev.drawio              (cloud infrastructure diagram — dev environment)
+├── iac_dev.png
+├── iac_prod.drawio             (cloud infrastructure diagram — prod environment)
+├── iac_prod.png
+├── iac_{env}.drawio            (one per environment found in IaC)
+├── iac_{env}.png
 ├── sequence_{id}.mmd           (per sequence diagram)
 ├── flow_{id}.mmd               (per system flow)
 └── component_overview.mmd      (component dependencies)
@@ -803,6 +841,21 @@ The report MUST follow this exact structure. Use the complete HTML template belo
             </div>
             <!-- For each environment (dev, test, staging, prod, shared): -->
             <h3>🟢 {ENVIRONMENT_NAME} Environment</h3>
+            <!-- Infrastructure diagram — PNG is REQUIRED -->
+            <div class="diagram-container">
+                <div class="diagram-header">
+                    <h4>{ENVIRONMENT_NAME} — Cloud Infrastructure</h4>
+                    <div>
+                        <span class="format-badge format-png">PNG</span>
+                        <span class="format-badge format-drawio">draw.io</span>
+                        <button class="download-btn" onclick="downloadDrawio('iac_{ENVIRONMENT}')">⬇ Download .drawio</button>
+                    </div>
+                </div>
+                <div class="diagram-png">
+                    <img src="data:image/png;base64,{IAC_ENVIRONMENT_PNG_BASE64}" alt="{ENVIRONMENT_NAME} Infrastructure Diagram" />
+                </div>
+            </div>
+            <!-- Resource inventory table -->
             <div class="diagram-container">
                 <table>
                     <thead>
@@ -827,6 +880,7 @@ The report MUST follow this exact structure. Use the complete HTML template belo
                     </tbody>
                 </table>
             </div>
+            <!-- Repeat above h3 + diagram + table for each environment -->
             <!-- Environment indicator emojis: dev=🟢, test=🟡, staging=🟠, prod=🔴, shared=🔵, all=⚪ -->
         </section>
 
@@ -998,14 +1052,14 @@ When the user says "analyze this codebase" or similar:
    - Generate Mermaid diagrams and save each as a `.mmd` file.
    - Generate Draw.io XML diagrams for all 6 types and save each as a `.drawio` file.
 
-6. **Phase 3b — Export Draw.io to PNG (REQUIRED for deployment, logical, interface).** These diagrams have NO Mermaid visual, so you MUST export them to PNG:
+6. **Phase 3b — Export Draw.io to PNG (REQUIRED for deployment, logical, interface, IaC).** These diagrams have NO Mermaid visual, so you MUST export them to PNG:
    ```bash
    drawio --export --format png --scale 2 --border 10 --quality 100 --output {name}.png {name}.drawio
    ```
-   Export at minimum: `deployment.png`, `logical.png`, `interface.png`. Then encode each as base64 for HTML embedding.
+   Export at minimum: `deployment.png`, `logical.png`, `interface.png`, and `iac_{env}.png` for each environment. Then encode each as base64 for HTML embedding.
    If draw.io CLI is NOT found, warn the user: "draw.io desktop is required for PNG diagram rendering. Install from https://github.com/jgraph/drawio-desktop/releases"
 
-7. **Phase 4 — Generate `architecture-report.html`** using the template above, filled with all analysis data, embedded Mermaid diagrams, and inline PNG images (base64 data URIs) for deployment, logical, and interface sections. Write it to the output directory.
+7. **Phase 4 — Generate `architecture-report.html`** using the template above, filled with all analysis data, embedded Mermaid diagrams, and inline PNG images (base64 data URIs) for deployment, logical, interface, and IaC sections. Write it to the output directory.
 
 8. **Phase 5 — Generate PDF.** Export the HTML report to `architecture-report.pdf` using a headless browser (Edge/Chrome or Playwright). Wait for Mermaid diagrams to render before capturing. See Phase 5 instructions above for commands.
 
@@ -1016,6 +1070,7 @@ When the user says "analyze this codebase" or similar:
      - architecture-report.pdf  (Solution Architecture Document)
      - {N} .drawio diagram files
      - deployment.png, logical.png, interface.png (embedded in report)
+     - iac_{env}.png per environment (embedded in report)
      - {N} .mmd diagram files
    ```
 

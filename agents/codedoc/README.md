@@ -14,8 +14,9 @@ Point CodeDoc at any codebase and it will:
 
 1. **Scan** — Walk the file tree, detect languages, frameworks, symbols, API endpoints, and infrastructure config
 2. **Analyse** — Reason about physical architecture, logical layers, components, interfaces, system flows, and sequence interactions
-3. **Generate Diagrams** — Produce Draw.io XML and Mermaid UML 2.5.1-compliant diagrams, then export Draw.io diagrams to PNG
-4. **Build Report** — Assemble everything into a single self-contained HTML file with embedded diagrams, tables, and interactive navigation
+3. **Audit** — Detect deprecated/unused code, analyse Infrastructure as Code (per environment), and map CI/CD pipelines
+4. **Generate Diagrams** — Produce Draw.io XML and Mermaid UML 2.5.1-compliant diagrams, then export Draw.io diagrams to PNG
+5. **Build Report** — Assemble everything into a single self-contained HTML report and PDF
 
 ### Output
 
@@ -59,7 +60,7 @@ codedoc-output/
 
 ## Setup
 
-1. Copy [`agent-codedoc/codedoc.agent.md`](agent-codedoc/codedoc.agent.md) to your Copilot agents directory:
+1. Copy [`codedoc.agent.md`](codedoc.agent.md) to your Copilot agents directory:
 
    ```
    # Windows
@@ -133,6 +134,9 @@ Using the scanned facts, the agent reasons about:
 - **Interfaces** — integration points, contracts, endpoints
 - **System Flows** — end-to-end request paths
 - **Sequence Diagrams** — detailed component interactions
+- **Deprecated/Unused Code** — dead code, unused imports, commented-out blocks, legacy patterns
+- **Infrastructure as Code** — Terraform, Bicep, ARM, CloudFormation, Pulumi, Helm, Docker, K8s configs grouped by environment (dev/test/staging/prod), with **Draw.io cloud infrastructure diagrams** per environment exported to PNG
+- **CI/CD Pipelines** — GitHub Actions, Azure DevOps, Jenkins, GitLab CI pipeline stages, triggers, quality gates, deployment strategy
 
 ### Phase 3 — Diagrams
 
@@ -152,6 +156,9 @@ Assembles a single `architecture-report.html` with:
 - Embedded PNG diagrams for physical and logical architecture
 - Mermaid diagrams for sequences and flows (rendered client-side)
 - Data tables for nodes, layers, components, interfaces, and flow steps
+- Deprecated/unused code findings with severity ratings
+- Infrastructure as Code inventory grouped by environment
+- CI/CD pipeline analysis with stages, triggers, and deployment strategy
 - Download buttons for `.drawio` files
 - Print-friendly CSS for PDF export
 
